@@ -1,25 +1,42 @@
 package com.quantum.network.handler
 
-import org.cloudburstmc.protocol.bedrock.codec.v898.Bedrock_v898
+import com.quantum.network.version.BedrockVersion
 import org.cloudburstmc.protocol.bedrock.data.PacketCompressionAlgorithm
 import org.cloudburstmc.protocol.bedrock.packet.NetworkSettingsPacket
+import org.cloudburstmc.protocol.bedrock.packet.PlayStatusPacket
 import org.cloudburstmc.protocol.bedrock.packet.RequestNetworkSettingsPacket
 import org.cloudburstmc.protocol.common.PacketSignal
 
 class PreLoginPacketHandler : PacketHandler() {
 
-    override fun handle(packet: RequestNetworkSettingsPacket): PacketSignal {
-        val packet = NetworkSettingsPacket().apply {
-            compressionThreshold = 0
-            compressionAlgorithm = PacketCompressionAlgorithm.ZLIB
-        }
+	override fun handle(packet: RequestNetworkSettingsPacket): PacketSignal {
+		val clientVersion = BedrockVersion.fromProtocol(packet.protocolVersion)
+		val latest = BedrockVersion.LATEST
 
-        session.codec = Bedrock_v898.CODEC
+		if (clientVersion == null || !clientVersion.isEqual(latest)) {
+			val playStatus = PlayStatusPacket().apply {
+				status = if (clientVersion != null && clientVersion.isAfter(latest)) {
+					PlayStatusPacket.Status.LOGIN_FAILED_SERVER_OLD
+				} else {
+					PlayStatusPacket.Status.LOGIN_FAILED_CLIENT_OLD
+				}
+			}
 
-        session.sendPacketImmediately(packet)
-        session.setCompression(PacketCompressionAlgorithm.ZLIB)
+			session.sendPacketImmediately(playStatus)
+			session.disconnect()
+			return PacketSignal.HANDLED
+		}
 
-        session.packetHandler = LoginPacketHandler().attach(session, session.server)
-        return PacketSignal.HANDLED
-    }
+		val networkSettings = NetworkSettingsPacket().apply {
+			compressionThreshold = 0
+			compressionAlgorithm = PacketCompressionAlgorithm.ZLIB
+		}
+
+		session.codec = BedrockVersion.LATEST.codec
+		session.sendPacketImmediately(networkSettings)
+		session.setCompression(PacketCompressionAlgorithm.ZLIB)
+
+		session.packetHandler = LoginPacketHandler().attach(session, session.server)
+		return PacketSignal.HANDLED
+	}
 }
