@@ -46,3 +46,4 @@ bin/
 
 # Quantum files
 logs
+quantum.yml
