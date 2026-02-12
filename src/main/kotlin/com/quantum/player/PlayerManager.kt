@@ -1,5 +1,6 @@
 package com.quantum.player
 
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -9,16 +10,19 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class PlayerManager {
 
-    private val playersByName = ConcurrentHashMap<String, Player>()
+    val players = ConcurrentHashMap<UUID, Player>()
 
     fun addPlayer(player: Player) {
-        playersByName[player.name.lowercase()] = player
+        players[player.uuid] = player
     }
 
     fun removePlayer(player: Player) {
-        playersByName.remove(player.name.lowercase())
+        players.remove(player.uuid)
     }
 
     fun getPlayerByName(name: String): Player?
-    = playersByName[name.lowercase()]
+    = players.values.find { it.name == name }
+
+	fun getPlayer(uuid: UUID): Player?
+	= players[uuid]
 }

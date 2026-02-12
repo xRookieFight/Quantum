@@ -9,14 +9,18 @@ import org.apache.logging.log4j.LogManager
  */
 object Quantum {
 
-    val name = "Quantum"
-    val version = "1.0.0-alpha"
+    const val NAME = "Quantum"
+    const val VERSION = "1.0.0-alpha"
 
     @JvmStatic
     fun main(args: Array<String>){
         val logger = LogManager.getLogger("Main Thread")
         try {
-            Server(logger)
+            val server = Server(logger)
+
+			Runtime.getRuntime().addShutdownHook(Thread {
+				server.shutdown()
+			})
         } catch (e: Exception) {
             logger.error(e.message, e)
         }

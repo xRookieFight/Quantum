@@ -11,6 +11,7 @@ import org.cloudburstmc.netty.channel.raknet.RakChannelFactory
 import org.cloudburstmc.netty.channel.raknet.config.RakChannelOption
 import org.cloudburstmc.protocol.bedrock.BedrockPeer
 import org.cloudburstmc.protocol.bedrock.BedrockPong
+import org.cloudburstmc.protocol.bedrock.data.GameType
 import org.cloudburstmc.protocol.bedrock.netty.initializer.BedrockChannelInitializer
 import java.net.InetSocketAddress
 import java.util.UUID
@@ -22,19 +23,21 @@ import java.util.UUID
  */
 class RakNetServer {
 
+	private val config = Server.instance.config
+
     private val advertisement = BedrockPong()
         .edition("MCPE")
-        .gameType("Survival")
+        .gameType(Server.instance.gameModeFrom(config.gameSettings.gamemode))
         .version(BedrockVersion.LATEST.name)
         .protocolVersion(BedrockVersion.LATEST.protocol)
-        .motd("Quantum Server")
-        .playerCount(0)
-        .maximumPlayerCount(20)
+        .motd(config.serverSettings.motd)
+        .playerCount(Server.instance.playerManager.players.size)
+        .maximumPlayerCount(config.serverSettings.maxPlayers)
         .serverId(UUID.randomUUID().mostSignificantBits)
-        .subMotd("quantum.org")
+        .subMotd(config.serverSettings.subMotd)
         .nintendoLimited(false)
-        .ipv4Port(19132)
-        .ipv6Port(19132)
+        .ipv4Port(config.networkSettings.port)
+        .ipv6Port(config.networkSettings.port)
 
     var server: Channel = ServerBootstrap()
         .group(NioEventLoopGroup())
@@ -47,9 +50,8 @@ class RakNetServer {
             override fun initSession(session: Session) {
                 session.packetHandler = PreLoginPacketHandler().attach(session, Server.instance)
             }
-
         })
-        .bind(InetSocketAddress("127.0.0.1", 19132))
+        .bind(InetSocketAddress(config.networkSettings.ip, config.networkSettings.port))
         .awaitUninterruptibly()
         .channel()
 

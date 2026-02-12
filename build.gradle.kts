@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.1.21"
+    kotlin("plugin.serialization") version "2.1.21"
     id("maven-publish")
     application
     alias(libs.plugins.shadow)
@@ -10,19 +11,16 @@ group = "com.quantum"
 version = "1.0.0-alpha"
 description = "Next-generation server software for Minecraft: Bedrock Edition"
 
-repositories {
-    mavenLocal()
-    mavenCentral()
-    maven("https://jitpack.io")
-    maven("https://repo.opencollab.dev/maven-releases/")
-    maven("https://repo.opencollab.dev/maven-snapshots/")
-}
+java.sourceCompatibility = JavaVersion.VERSION_21
+java.targetCompatibility = JavaVersion.VERSION_21
 
 
 dependencies {
-    api(libs.network)
-    api(libs.bundles.log4j)
-    api(libs.bundles.protocol)
+	api(libs.serialization)
+	api(libs.network)
+	api(libs.bundles.log4j)
+	api(libs.bundles.protocol)
+	implementation(libs.bundles.okaeri)
 }
 
 application {
